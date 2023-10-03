@@ -2,34 +2,34 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://example.org/</loc>
+    <loc>https://ed-oto.github.io/</loc>
     <lastmod>2022-08-27T09:16:45+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/categories/</loc>
+    <loc>https://ed-oto.github.io/categories/</loc>
     <lastmod>2022-08-27T09:16:45+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/hello/</loc>
+    <loc>https://ed-oto.github.io/tags/hello/</loc>
     <lastmod>2022-08-27T09:16:45+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/categories/hello/</loc>
+    <loc>https://ed-oto.github.io/categories/hello/</loc>
     <lastmod>2022-08-27T09:16:45+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/posts/markdown-cheat-sheet/</loc>
+    <loc>https://ed-oto.github.io/posts/markdown-cheat-sheet/</loc>
     <lastmod>2022-08-27T09:16:45+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/posts/</loc>
+    <loc>https://ed-oto.github.io/posts/</loc>
     <lastmod>2022-08-27T09:16:45+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/</loc>
+    <loc>https://ed-oto.github.io/tags/</loc>
     <lastmod>2022-08-27T09:16:45+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/tags/whatsapp/</loc>
+    <loc>https://ed-oto.github.io/tags/whatsapp/</loc>
     <lastmod>2022-08-27T09:16:45+00:00</lastmod>
   </url><url>
-    <loc>http://example.org/categories/css/</loc>
+    <loc>https://ed-oto.github.io/categories/css/</loc>
   </url><url>
-    <loc>http://example.org/categories/javascript/</loc>
+    <loc>https://ed-oto.github.io/categories/javascript/</loc>
   </url><url>
-    <loc>http://example.org/categories/uncategories/</loc>
+    <loc>https://ed-oto.github.io/categories/uncategories/</loc>
   </url>
 </urlset>
