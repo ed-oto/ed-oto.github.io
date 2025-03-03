@@ -1,4 +1,4 @@
-module github.com/imfing/issues-blog
+module github.com/ed-oto/ed-oto.github.io
 
 go 1.19
 
