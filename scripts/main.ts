@@ -22,10 +22,13 @@ type IssuesListForRepoResponse =
   RestEndpointMethodTypes["issues"]["listForRepo"]["response"];
 type IssuesListForRepoResponseDataType = IssuesListForRepoResponse["data"];
 
-// Write file function
+//  Enhanced to create nested directories 
 async function writeFile(path: string, text: string): Promise<void> {
+  const dir = pathJoin(...path.split("/").slice(0, -1));
+  await Deno.mkdir(dir, { recursive: true }); // Creates all necessary parent dirs
   return await Deno.writeTextFile(path, text);
 }
+
 
 // Format date
 const formatDate = (d: string) => format(new Date(d), "yyyy-MM-dd");
@@ -42,6 +45,19 @@ async function readConfigFile(path: string): Promise<Record<string, unknown>> {
   }
 }
 
+// Helper to get valid subdirectory name from labels 
+function getSubdirectoryName(labels: string[], excludedLabels: string[]): string {
+  const validLabels = labels.filter(l => !excludedLabels.includes(l));
+  if (validLabels.length === 0) return "general"; // Default folder
+  
+  // Clean label for filesystem use
+  return validLabels[0]
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+}
+
+
 // Get GitHub token from environment variable
 const GITHUB_TOKEN: string = Deno.env.get("GITHUB_TOKEN")!;
 const GITHUB_REPOSITORY: string = Deno.env.get("GITHUB_REPOSITORY")!;
@@ -56,86 +72,50 @@ const octokit = new Octokit({
   baseUrl: String(config.baseUrl),
 });
 
-// Iterate over all issues
-const iterator = octokit.paginate.iterator(
+// Main processing loop now uses label-based subdirs 
+for await (const { data: issues } of octokit.paginate.iterator(
   octokit.rest.issues.listForRepo,
-  {
-    owner: owner,
-    repo: repo,
-    per_page: 100,
-    state: config.state || "all",
-  } as IssuesListForRepoParameters,
-);
-
-for await (const { data: issues } of iterator) {
+  { owner, repo, per_page: 100, state: config.state || "all" }
+)) {
   for (const issue of issues as IssuesListForRepoResponseDataType) {
-    // Skip pull requests, as GitHub's REST API considers every pull request an issue
-    if (issue.pull_request) {
-      continue;
-    }
+    if (issue.pull_request) continue;
 
-    console.log("Issue #%d: %s", issue.number, issue.title);
+    console.log("Processing Issue #%d: %s", issue.number, issue.title);
 
-    // Construct frontmatter
-    const title = issue.title;
-    const createDate = formatDate(issue.created_at);
-    const updateDate = formatDate(issue.updated_at);
-    const labels = issue.labels.map((l) => {
-      if (typeof l === "object" && "name" in l) {
-        return l.name!;
-      }
-      return l;
-    }) as Array<string> || [];
-
-    // Skip if some label is present in the excludedLabels
-    const shouldSkip = labels.some(
-      (l) => (config.excludedLabels as Array<string>).includes(l),
+    // Calculate output subdirectory 
+    const labels = issue.labels.map(l => typeof l === "object" ? l.name! : l);
+    const subDir = getSubdirectoryName(
+      labels,
+      config.excludedLabels as string[] || []
     );
-    if (shouldSkip) {
-      console.log("Skip...");
-      continue;
-    }
 
-    const frontmatter = Object({
-      "title": title,
-      "date": createDate,
-      "lastMod": updateDate,
-      "tags": labels,
-    });
+    // (Keep existing frontmatter generation)
+    const frontmatter = {
+      title: issue.title,
+      date: formatDate(issue.created_at),
+      lastMod: formatDate(issue.updated_at),
+      tags: labels,
+      ...(config.enableEditUrl ? { editURL: issue.html_url } : {})
+    };
 
-    // Add `editURL` in frontmatter if enabled
-    if (config.enableEditUrl) {
-      frontmatter["editURL"] = issue.html_url;
-    }
+    // Path now includes subdirectory 
+    const filename = `${sanitize(issue.title)}.md`;
+    const outpath = pathJoin(OUTPUT_DIR, subDir, filename);
 
-    const frontmatterContent = `---\n${yamlStringify(frontmatter)}\n---`;
-    const issueContent = issue.body!.trim();
-
-    // Get comments for the issue
-    const resp: IssuesListCommentsResponse = await octokit.rest.issues
-      .listComments({
-        owner: owner,
-        repo: repo,
-        issue_number: issue.number,
-      } as IssuesListCommentsParameters);
-
-    const commentsContent =
-      (resp.data.map((comment: IssuesListCommentsResponseDataType[number]) =>
-        comment.body!
-      ) || [])
-        .join("\n\n").trim();
-
-    // Construct YAML content
-    const content = [frontmatterContent, issueContent, commentsContent]
-      .join("\n\n").trim();
-
-    // Write markdown file to OUTPUT_DIR
-    const filename = sanitize(title);
-    const outpath = pathJoin(OUTPUT_DIR, `${filename}.md`);
+    // content assembly
+    const content = [
+      `---\n${yamlStringify(frontmatter)}\n---`,
+      issue.body!.trim(),
+      (await octokit.rest.issues.listComments({ 
+        owner, repo, issue_number: issue.number 
+      })).data.map(c => c.body!).join("\n\n")
+    ].join("\n\n").trim();
 
     await writeFile(outpath, content);
-    console.log(`Write to file: ${outpath}`);
+    console.log(`Saved to: ${outpath}`);
   }
 }
+
+Deno.exit();
 
 Deno.exit();
