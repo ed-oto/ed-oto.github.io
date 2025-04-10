@@ -11,3 +11,10 @@ rssLimit = 20
 
 [outputs]
   home = ["HTML", "RSS", "JSON"]
+
+[permalinks]
+  posts = "/:slug/"  # Removes the default /posts/ prefix
+
+[[taxonomies]]
+  tag = "tags"
+  category = "categories"
